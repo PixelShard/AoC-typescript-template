@@ -27,4 +27,9 @@ export class StringHelper {
     });
     return sort ? summedArray.sort((n1, n2) => n2 - n1) : summedArray;
   }
+
+  splitString(string: string): string[] {
+    const middle = Math.floor(string.length / 2);
+    return [string.substring(0, middle), string.substring(middle)];
+  }
 }
