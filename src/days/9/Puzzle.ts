@@ -1,23 +1,21 @@
 import Puzzle from '../../types/AbstractPuzzle';
-import {StringHelper} from '../../utils/string.helper';
+import { StringHelper } from '../../utils/string.helper';
 
-interface IPosition {H: boolean; T: boolean, s: boolean}
 export default class ConcretePuzzle extends Puzzle {
   private stringHelper = new StringHelper();
-  private positions: {H: number[], T: number[], s: number[]};
+  private positions: {stack: number[][], s: number[]};
   private diagram: Position[][] = [];
 
   public solveFirst(): string {
     // WRITE SOLUTION FOR TEST 1
-    this.positions = { H: [0, 0], T: [0, 0], s: [0, 0] };
-    this.diagram[0] = [new Position(true, true, true)];
+    this.positions = { stack: [[0, 0], [0, 0]], s: [0, 0] };
+    this.diagram[0] = [new Position(['T', 'H'], true)];
     // this.printDiagram(this.diagram);
     this.stringHelper.stringIntoArray(this.input).map(command => {
       this.doMove(command);
     });
     // console.log('<<<<<<<<------------------------------->>>>>>>>');
     // this.printDiagram(this.diagram);
-    // this.countDiagram(this.diagram);
     return this.countDiagram(this.diagram);
   }
 
@@ -28,12 +26,22 @@ export default class ConcretePuzzle extends Puzzle {
 
   public solveSecond(): string {
     // WRITE SOLUTION FOR TEST 2
-    return 'day 1 solution 2';
+    this.diagram = [];
+    this.positions = {
+      stack: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+      s: [0, 0]
+    };
+    this.diagram[0] = [new Position(['9', '8', '7', '6', '5', '4', '3', '2', '1', 'H'], true)];
+    this.stringHelper.stringIntoArray(this.input).map(command => {
+      this.doMove(command);
+    });
+    this.printDiagram(this.diagram);
+    return this.countDiagram(this.diagram);
   }
 
   public getSecondExpectedResult(): string {
     // RETURN EXPECTED SOLUTION FOR TEST 2;
-    return 'day 1 solution 2';
+    return '2485';
   }
 
   private doMove(move: string) {
@@ -41,94 +49,124 @@ export default class ConcretePuzzle extends Puzzle {
       return;
     }
     let [direction, count] = move.split(/\s/);
-      switch (direction) {
-        case 'U':
-          // console.log('==== UP ====');
-          if (this.positions.H[0] === 0) {
-            this.diagram.unshift(new Array(this.diagram[0].length));
-            for (let i = 0; i < this.diagram[0].length; i++) {
-              this.diagram[0][i] = new Position(false, false, false);
+    switch (direction) {
+      case 'U':
+        // console.log('==== UP ====');
+        if (this.getHead()[0] === 0) {
+          this.diagram.unshift(new Array(this.diagram[0].length));
+          for (let i = 0; i < this.diagram[0].length; i++) {
+            this.diagram[0][i] = new Position([], false);
+          }
+          this.diagram[1][this.getHead()[1]].STACK.pop();
+          this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.push('H');
+          this.positions.stack.map((pos, i) => {
+            if (i < this.positions.stack.length -1) {
+              pos[0] += 1;
             }
-            this.diagram[1][this.positions.H[1]].H = false;
-            this.diagram[this.positions.H[0]][this.positions.H[1]].H = true;
-            this.positions.T[0] += 1;
-            this.positions.s[0] += 1;
-          } else {
-            this.diagram[this.positions.H[0]][this.positions.H[1]].H = false;
-            this.positions.H[0] -= 1;
-            this.diagram[this.positions.H[0]][this.positions.H[1]].H = true;
+          });
+          this.positions.s[0] += 1;
+        } else {
+          this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.pop();
+          this.getHead()[0] -= 1;
+          this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.push('H');
+        }
+        break;
+      case 'R':
+        // console.log('==== RIGHT ====');
+        if (this.getHead()[1] === this.diagram[this.getHead()[0]].length - 1) {
+          this.diagram.map(row => {
+            row.push(new Position([], false));
+          });
+        }
+        this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.pop();
+        this.getHead()[1] += 1;
+        this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.push('H');
+        break;
+      case 'D':
+        // console.log('==== DOWN ====');
+        if (this.getHead()[0] === this.diagram.length - 1) {
+          this.diagram.push(new Array(this.diagram[0].length));
+          for (let i = 0; i < this.diagram[0].length; i++) {
+            this.diagram[this.diagram.length - 1][i] = new Position([], false);
           }
-          break;
-        case 'R':
-          // console.log('==== RIGHT ====');
-          if (this.positions.H[1] === this.diagram[this.positions.H[0]].length - 1) {
-            this.diagram.map(row => {
-              row.push(new Position(false, false, false));
-            });
-          }
-          this.diagram[this.positions.H[0]][this.positions.H[1]].H = false;
-          this.positions.H[1] += 1;
-          this.diagram[this.positions.H[0]][this.positions.H[1]].H = true;
-          break;
-        case 'D':
-          // console.log('==== DOWN ====');
-          if (this.positions.H[0] === this.diagram.length - 1) {
-            this.diagram.push(new Array(this.diagram[0].length));
-            for (let i = 0; i < this.diagram[0].length; i++) {
-              this.diagram[this.diagram.length - 1][i] = new Position(false, false, false);
+        }
+        this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.pop();
+        this.getHead()[0] += 1;
+        this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.push('H');
+        break;
+      case 'L':
+        // console.log('==== LEFT ====');
+        if (this.getHead()[1] === 0) {
+          this.diagram.map(row => {
+            row.unshift(new Position([], false));
+          });
+          this.diagram[this.getHead()[0]][1].STACK.pop();
+          this.diagram[this.getHead()[0]][0].STACK.push('H');
+          this.positions.stack.map((pos, i) => {
+            if (i < this.positions.stack.length -1) {
+              pos[1] += 1;
             }
-          }
-          this.diagram[this.positions.H[0]][this.positions.H[1]].H = false;
-          this.positions.H[0] += 1;
-          this.diagram[this.positions.H[0]][this.positions.H[1]].H = true;
-          break;
-        case 'L':
-          // console.log('==== LEFT ====');
-          if (this.positions.H[1] === 0) {
-            this.diagram.map(row => {
-              row.unshift(new Position(false, false, false));
-            });
-            this.diagram[this.positions.H[0]][1].H = false;
-            this.diagram[this.positions.H[0]][0].H = true;
-            this.positions.T[1] += 1;
-            this.positions.s[1] += 1;
-          } else {
-            this.diagram[this.positions.H[0]][this.positions.H[1]].H = false;
-            this.positions.H[1] -= 1;
-            this.diagram[this.positions.H[0]][this.positions.H[1]].H = true;
-          }
-          break;
-      }
+          });
+          this.positions.s[1] += 1;
+        } else {
+          this.popHead();
+          this.getHead()[1] -= 1;
+          this.pushHead();
+        }
+        break;
+    }
 
-      // this.printDiagram(this.diagram);
-      this.checkTailTouchingHead();
-      // console.log('************************************************')
-      // this.printDiagram(this.diagram);
-      if (+count - 1 > 0) {
-        this.doMove(`${direction} ${+count - 1}`);
-      }
+    // this.printDiagram(this.diagram);
+    this.checkTailTouchingHead();
+    // console.log('************************************************')
+    // this.printDiagram(this.diagram);
+    if (+count - 1 > 0) {
+      this.doMove(`${direction} ${+count - 1}`);
+    }
+  }
+
+  private getHead(): number[] {
+    return this.positions.stack[this.positions.stack.length - 1];
+  }
+
+  private getPositionByIndex(i: number): number[] {
+    return this.positions.stack[i];
+  }
+
+  private popHead(): void {
+    this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.pop();
+  }
+
+  private pushHead(): void {
+    this.diagram[this.getHead()[0]][this.getHead()[1]].STACK.push('H');
   }
 
   private checkTailTouchingHead() {
-    if (Math.abs(this.positions.T[0] - this.positions.H[0]) > 1) { // VERT
+    for (let j = this.positions.stack.length - 1; j > 0; j--) {
+    if (Math.abs(this.getPositionByIndex(j-1)[0] - this.getPositionByIndex(j)[0]) > 1) { // VERT
       // console.log('TAIL NEEDS TO MOVE VERT !!!!');
-      this.diagram[this.positions.T[0]][this.positions.T[1]].T = false;
-      if (this.positions.T[1] !== this.positions.H[1]) {
-        this.positions.T[1] < this.positions.H[1] ? this.positions.T[1] += 1 : this.positions.T[1] -= 1;
+      const item = this.diagram[this.getPositionByIndex(j-1)[0]][this.getPositionByIndex(j-1)[1]].STACK.pop();
+      if (this.getPositionByIndex(j-1)[1] !== this.getPositionByIndex(j)[1]) {
+        this.getPositionByIndex(j-1)[1] < this.getPositionByIndex(j)[1] ? this.getPositionByIndex(j-1)[1] += 1 : this.getPositionByIndex(j-1)[1] -= 1;
       }
-      this.positions.T[0] < this.positions.H[0] ? this.positions.T[0] += 1 : this.positions.T[0] -= 1;
-      this.diagram[this.positions.T[0]][this.positions.T[1]].T = true;
-      this.diagram[this.positions.T[0]][this.positions.T[1]].tailWasHere = true;
+      this.getPositionByIndex(j-1)[0] < this.getPositionByIndex(j)[0] ? this.getPositionByIndex(j-1)[0] += 1 : this.getPositionByIndex(j-1)[0] -= 1;
+      this.diagram[this.getPositionByIndex(j-1)[0]][this.getPositionByIndex(j-1)[1]].STACK.push(item);
+      if (item === 'T' || item === '9') {
+        this.diagram[this.getPositionByIndex(j-1)[0]][this.getPositionByIndex(j-1)[1]].tailWasHere = true;
+      }
     }
-    if (Math.abs(this.positions.T[1] - this.positions.H[1]) > 1) { // HORIZ
+    if (Math.abs(this.getPositionByIndex(j-1)[1] - this.getPositionByIndex(j)[1]) > 1) { // HORIZ
       // console.log('TAIL NEEDS TO MOVE HORIZ !!!!');
-      this.diagram[this.positions.T[0]][this.positions.T[1]].T = false;
-      if (this.positions.T[0] !== this.positions.H[0]) {
-        this.positions.T[0] < this.positions.H[0] ? this.positions.T[0] += 1 : this.positions.T[0] -= 1;
+      const item2 = this.diagram[this.getPositionByIndex(j-1)[0]][this.getPositionByIndex(j-1)[1]].STACK.pop();
+      if (this.getPositionByIndex(j-1)[0] !== this.getPositionByIndex(j)[0]) {
+        this.getPositionByIndex(j-1)[0] < this.getPositionByIndex(j)[0] ? this.getPositionByIndex(j-1)[0] += 1 : this.getPositionByIndex(j-1)[0] -= 1;
       }
-      this.positions.T[1] < this.positions.H[1] ? this.positions.T[1] += 1 : this.positions.T[1] -= 1;
-      this.diagram[this.positions.T[0]][this.positions.T[1]].T = true;
-      this.diagram[this.positions.T[0]][this.positions.T[1]].tailWasHere = true;
+      this.getPositionByIndex(j-1)[1] < this.getPositionByIndex(j)[1] ? this.getPositionByIndex(j-1)[1] += 1 : this.getPositionByIndex(j-1)[1] -= 1;
+      this.diagram[this.getPositionByIndex(j-1)[0]][this.getPositionByIndex(j-1)[1]].STACK.push(item2);
+      if (item2 === 'T' || item2 === '9') {
+        this.diagram[this.getPositionByIndex(j - 1)[0]][this.getPositionByIndex(j - 1)[1]].tailWasHere = true;
+      }
+    }
     }
   }
 
@@ -152,19 +190,17 @@ export default class ConcretePuzzle extends Puzzle {
 }
 
 class Position {
-  public H = false; // HEAD
-  public T = false; // TAIL
+  public STACK: string[] = []; // STACK
   public s = false; // start
   public tailWasHere = false;
 
-  constructor(T: boolean, H: boolean, s: boolean) {
-    this.H = H;
-    this.T = T;
+  constructor(STACK: string[] = [], s: boolean) {
+    this.STACK = STACK;
     this.s = s;
   }
 
   public toString():string {
-    // return this.tailWasHere this.H ? 'H' : this.T ? 'T' : this.s ? 's' : '.';
-    return this.tailWasHere ? '#' : this.H ? 'H' : this.T ? 'T' : this.s ? 's' : '.';
+    // return this.STACK.length ? this.STACK[this.STACK.length - 1] : this.s ? 's' : '.';
+    return this.tailWasHere ? '#' : this.STACK.length ? this.STACK[this.STACK.length - 1] : this.s ? 's' : '.';
   }
 }
